@@ -76,13 +76,26 @@ export default function App() {
   const total = carrito.reduce((s, item) => s + Number(item.price || 0) * item.cantidad, 0)
 
   function agregar(producto) {
-    setCarrito(actual => {
-      const existe = actual.find(p => p.id === producto.id)
-      if (existe) return actual.map(p => p.id === producto.id
-        ? { ...p, cantidad: p.cantidad + 1 } : p)
-      return [...actual, { ...producto, cantidad: 1 }]
-    })
-  }
+  const disponible = Number(producto.stock || 0)
+
+  if (disponible <= 0) return
+
+  setCarrito(actual => {
+    const existe = actual.find(p => p.id === producto.id)
+
+    if (existe) {
+      if (existe.cantidad >= disponible) return actual
+
+      return actual.map(p =>
+        p.id === producto.id
+          ? { ...p, cantidad: p.cantidad + 1 }
+          : p
+      )
+    }
+
+    return [...actual, { ...producto, cantidad: 1 }]
+  })
+}
 
   function cambiarCantidad(id, cantidad) {
     setCarrito(actual => actual
@@ -197,7 +210,13 @@ export default function App() {
                 <h3>{p.name}</h3>
                 {p.presentation && <p>{p.presentation}</p>}
                 <strong className="precio">{p.price ? `$${Number(p.price).toLocaleString('es-AR')}` : 'Consultar precio'}</strong>
-                <button className="boton boton-azul ancho" onClick={() => agregar(p)}>Agregar al carrito</button>
+                <button
+  className="boton boton-azul ancho"
+  disabled={Number(p.stock || 0) <= 0}
+  onClick={() => agregar(p)}
+>
+  {Number(p.stock || 0) <= 0 ? 'SIN STOCK' : 'Agregar al carrito'}
+</button>
                 {admin && <div className="acciones-admin">
                   <button onClick={() => prepararEdicion(p)}>Editar</button>
                   <button onClick={() => eliminar(p.id)}>Ocultar</button>
